@@ -7,6 +7,11 @@ export interface TrackerConfig {
    */
   endpoint?: string;
   /**
+   * App ID obtained from the UserTracker dashboard.
+   * Sent in every request body so the backend associates events with the correct app.
+   */
+  appId?: string;
+  /**
    * App secret key obtained from the UserTracker dashboard.
    * Sent as the `Authorization: Bearer` header on every request.
    */

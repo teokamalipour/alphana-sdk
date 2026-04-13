@@ -2,6 +2,7 @@ export type LogLevel = "info" | "warn" | "error";
 
 export interface LogEntry {
   sessionId?: string;
+  appId?: string;
   level: LogLevel;
   message: string;
   url?: string;
@@ -21,6 +22,7 @@ type ConsoleFn = (...args: unknown[]) => void;
 export class LogCapture {
   private readonly endpoint: string;
   private readonly sessionId: string;
+  private readonly appId?: string;
   private readonly authHeaders: Record<string, string>;
 
   // Original console methods preserved so we can restore them.
@@ -39,6 +41,7 @@ export class LogCapture {
     endpoint: string;
     sessionId: string;
     secretKey?: string;
+    appId?: string;
   }) {
     // Derive the API base URL by stripping everything from the last path
     // segment that isn't a versioning prefix.  The tracker config `endpoint`
@@ -56,6 +59,7 @@ export class LogCapture {
       this.endpoint = options.endpoint;
     }
     this.sessionId = options.sessionId;
+    this.appId = options.appId;
     this.authHeaders = options.secretKey
       ? { Authorization: `Bearer ${options.secretKey}` }
       : {};
@@ -163,6 +167,7 @@ export class LogCapture {
   ): void {
     const entry: LogEntry = {
       sessionId: this.sessionId,
+      ...(this.appId ? { appId: this.appId } : {}),
       level,
       message,
       url: typeof window !== "undefined" ? window.location.href : undefined,

@@ -160,6 +160,7 @@ export class UserTracker {
           endpoint: this.cfg.endpoint,
           sessionId: this.session.id,
           secretKey: this.cfg.secretKey,
+          appId: this.cfg.appId,
         });
         this.logCapture.init();
       }
@@ -227,6 +228,7 @@ export class UserTracker {
       sessionId: this.session.id,
       path: typeof window !== "undefined" ? window.location.pathname : "/",
       active: true,
+      ...(this.cfg.appId ? { appId: this.cfg.appId } : {}),
       ...(this.location ? { location: this.location } : {}),
     });
     try {
@@ -255,6 +257,7 @@ export class UserTracker {
       sessionId: this.session.id,
       path: typeof window !== "undefined" ? window.location.pathname : "/",
       active: false,
+      ...(this.cfg.appId ? { appId: this.cfg.appId } : {}),
     });
     // sendBeacon fires even if the page is being unloaded.
     if (typeof navigator !== "undefined" && navigator.sendBeacon) {
@@ -435,6 +438,7 @@ export class UserTracker {
 
   private buildBatchBody(events: TrackerEvent[]): string {
     return JSON.stringify({
+      ...(this.cfg.appId ? { appId: this.cfg.appId } : {}),
       location: this.location ?? undefined,
       events: events.map((e) => ({
         sessionId: this.session.id,
