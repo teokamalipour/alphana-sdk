@@ -99,20 +99,20 @@ Add `<NavigationTracker />` inside your root layout (inside `<Providers>`).
 
 All options are optional.
 
-| Option             | Type                            | Default | Description                                                         |
-| ------------------ | ------------------------------- | ------- | ------------------------------------------------------------------- |
-| `endpoint`         | `string`                        | `https://api.alpha-tracker.ir/api/events` | Override only when self-hosting          |
-| `secretKey`        | `string`                        | —       | App secret key from the dashboard — sent as `Authorization: Bearer` |
-| `sessionId`        | `string`                        | auto    | Override the auto-generated session UUID                            |
-| `trackNavigation`  | `boolean`                       | `true`  | Intercept `pushState` / `popstate` for SPA route changes            |
-| `trackTime`        | `boolean`                       | `true`  | Measure time spent on each page                                     |
-| `trackHeatmap`     | `boolean`                       | `true`  | Collect mouse-move, click, and scroll positions                     |
-| `trackLogs`        | `boolean`                       | `true`  | Capture `console.info/warn/error` and unhandled errors              |
-| `mouseSampleRate`  | `number` (0–1)                  | `0.3`   | Fraction of mouse/scroll events to record                           |
-| `maxHeatmapPoints` | `number`                        | `2000`  | Maximum in-memory heatmap points per page                           |
-| `batchSize`        | `number`                        | `20`    | Events queued before an automatic batch flush                       |
-| `flushInterval`    | `number` (ms)                   | `5000`  | Milliseconds between automatic flushes regardless of queue size     |
-| `onEvent`          | `(event: TrackerEvent) => void` | —       | Callback invoked synchronously for every emitted event              |
+| Option             | Type                            | Default                                   | Description                                                         |
+| ------------------ | ------------------------------- | ----------------------------------------- | ------------------------------------------------------------------- |
+| `endpoint`         | `string`                        | `https://api.alpha-tracker.ir/api/events` | Override only when self-hosting                                     |
+| `secretKey`        | `string`                        | —                                         | App secret key from the dashboard — sent as `Authorization: Bearer` |
+| `sessionId`        | `string`                        | auto                                      | Override the auto-generated session UUID                            |
+| `trackNavigation`  | `boolean`                       | `true`                                    | Intercept `pushState` / `popstate` for SPA route changes            |
+| `trackTime`        | `boolean`                       | `true`                                    | Measure time spent on each page                                     |
+| `trackHeatmap`     | `boolean`                       | `true`                                    | Collect mouse-move, click, and scroll positions                     |
+| `trackLogs`        | `boolean`                       | `true`                                    | Capture `console.info/warn/error` and unhandled errors              |
+| `mouseSampleRate`  | `number` (0–1)                  | `0.3`                                     | Fraction of mouse/scroll events to record                           |
+| `maxHeatmapPoints` | `number`                        | `2000`                                    | Maximum in-memory heatmap points per page                           |
+| `batchSize`        | `number`                        | `20`                                      | Events queued before an automatic batch flush                       |
+| `flushInterval`    | `number` (ms)                   | `5000`                                    | Milliseconds between automatic flushes regardless of queue size     |
+| `onEvent`          | `(event: TrackerEvent) => void` | —                                         | Callback invoked synchronously for every emitted event              |
 
 ## API
 
