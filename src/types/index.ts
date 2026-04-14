@@ -47,6 +47,14 @@ export interface TrackerConfig {
    * Default: true (when endpoint is provided)
    */
   trackLogs?: boolean;
+  /**
+   * Automatically capture and send full-page screenshots to the backend
+   * every 5 minutes for use in the heatmap view.
+   * Requires `html2canvas` to be installed in the host application:
+   *   npm install html2canvas
+   * Default: true (when endpoint is provided and html2canvas is installed)
+   */
+  trackSnapshots?: boolean;
   /** Called synchronously for every emitted event. */
   onEvent?: (event: TrackerEvent) => void;
 }

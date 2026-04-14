@@ -12,6 +12,7 @@ import { NavigationPlugin } from "./core/navigation";
 import { TimePlugin } from "./core/time";
 import { HeatmapPlugin } from "./core/heatmap";
 import { LogCapture } from "./core/logger";
+import { SnapshotPlugin } from "./core/snapshot";
 
 export const DEFAULT_ENDPOINT = "https://api.alphana.ir/api/events";
 
@@ -21,6 +22,7 @@ const DEFAULTS = {
   trackTime: true,
   trackHeatmap: true,
   trackLogs: true,
+  trackSnapshots: true,
   mouseSampleRate: 0.3,
   maxHeatmapPoints: 2000,
   batchSize: 20,
@@ -68,6 +70,7 @@ export class UserTracker {
   private heatmap?: HeatmapPlugin;
   /** Public so consumers can call logCapture.capture() for manual log entries. */
   logCapture?: LogCapture;
+  private snapshot?: SnapshotPlugin;
   private initialized = false;
   private readonly subscribers = new Set<SubscriberFn>();
 
@@ -164,6 +167,19 @@ export class UserTracker {
         });
         this.logCapture.init();
       }
+
+      // Screenshot capture for heatmap background.
+      if (this.cfg.trackSnapshots !== false) {
+        this.snapshot = new SnapshotPlugin({
+          endpoint: this.cfg.endpoint,
+          appId: this.cfg.appId,
+          secretKey: this.cfg.secretKey,
+        });
+        // Capture immediately on init.
+        void this.snapshot.capture(window.location.pathname);
+        // Re-capture after each SPA navigation.
+        window.addEventListener("tracker:navigate", this.handleNavigate);
+      }
     }
 
     this.initialized = true;
@@ -193,6 +209,11 @@ export class UserTracker {
     this.time?.destroy();
     this.heatmap?.destroy();
     this.logCapture?.destroy();
+    this.snapshot?.destroy();
+
+    if (typeof window !== "undefined") {
+      window.removeEventListener("tracker:navigate", this.handleNavigate);
+    }
 
     // Best-effort flush of any remaining queued events.
     if (this.queue.length > 0 && this.cfg.endpoint) {
@@ -212,6 +233,13 @@ export class UserTracker {
   private handlePageHide = (): void => {
     if (this.queue.length > 0) this.flushBeacon();
     this.sendDeactivate();
+  };
+
+  private handleNavigate = (e: Event): void => {
+    const path = (e as CustomEvent<{ path: string }>).detail?.path;
+    if (path && this.snapshot) {
+      void this.snapshot.capture(path);
+    }
   };
 
   /**
