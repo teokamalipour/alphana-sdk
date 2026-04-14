@@ -55,6 +55,11 @@ export interface TrackerConfig {
    * Default: true (when endpoint is provided and html2canvas is installed)
    */
   trackSnapshots?: boolean;
+  /**
+   * Minimum milliseconds between screenshots for the same page path.
+   * Defaults to 300 000 (5 minutes). Only used when `trackSnapshots` is true.
+   */
+  snapshotIntervalMs?: number;
   /** Called synchronously for every emitted event. */
   onEvent?: (event: TrackerEvent) => void;
 }

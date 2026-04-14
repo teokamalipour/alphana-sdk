@@ -4,13 +4,13 @@ import html2canvas from "html2canvas";
  * SnapshotPlugin
  *
  * Captures a full-page screenshot via html2canvas and POSTs it to the backend
- * snapshot endpoint once every 5 minutes per page.
+ * snapshot endpoint once every 5 minutes per page (configurable).
  *
- * Timestamps are persisted in localStorage so the 5-min throttle survives
+ * Timestamps are persisted in localStorage so the throttle survives
  * page reloads.
  */
 
-const INTERVAL_MS = 5 * 1000; // 5 minutes
+const DEFAULT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const STORAGE_KEY = "__ut_snap_ts__";
 
 export class SnapshotPlugin {
@@ -18,17 +18,24 @@ export class SnapshotPlugin {
   private readonly snapshotUrl: string;
   private readonly appId?: string;
   private readonly secretKey?: string;
+  private readonly intervalMs: number;
 
   constructor(cfg: {
     /** Base events endpoint, e.g. "https://api.example.com/api/events" */
     endpoint: string;
     appId?: string;
     secretKey?: string;
+    /**
+     * Minimum milliseconds between screenshots for the same path.
+     * Defaults to 300 000 (5 minutes).
+     */
+    intervalMs?: number;
   }) {
     // Derive the snapshot endpoint from the events endpoint.
     this.snapshotUrl = cfg.endpoint.replace(/\/events$/, "/snapshots");
     this.appId = cfg.appId;
     this.secretKey = cfg.secretKey;
+    this.intervalMs = cfg.intervalMs ?? DEFAULT_INTERVAL_MS;
 
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -47,7 +54,7 @@ export class SnapshotPlugin {
     if (typeof window === "undefined") return;
 
     const last = this.lastSentPerPath[path] ?? 0;
-    if (Date.now() - last < INTERVAL_MS) return;
+    if (Date.now() - last < this.intervalMs) return;
 
     try {
       // Capture the <html> element so backgrounds set on :root / html are included.

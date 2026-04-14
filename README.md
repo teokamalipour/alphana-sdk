@@ -1,76 +1,88 @@
-# alpha-tracker
+# alphana-sdk
 
-Client-side analytics SDK. Tracks navigation, time-on-page and mouse heatmaps for any React, Next.js, Vite or vanilla JS/TS project.
+Client-side analytics SDK for React, Next.js, Vite, and vanilla JS/TS projects. Tracks navigation, time-on-page, heatmaps, error logs, and periodic page screenshots — all without cookies or third parties.
 
 ## Installation
 
 ```bash
-npm install alpha-tracker
-# or
-pnpm add alpha-tracker
-# or
-yarn add alpha-tracker
+npm install alphana-sdk
+# pnpm
+pnpm add alphana-sdk
+# yarn
+yarn add alphana-sdk
+# bun
+bun add alphana-sdk
 ```
 
-## Vanilla JS / TypeScript
+> **Snapshots optional:** If you want the screenshot feature (`trackSnapshots: true`), also install `html2canvas`:
+> ```bash
+> npm install html2canvas
+> ```
 
-```ts
-import { UserTracker } from "alpha-tracker";
+---
 
-const tracker = new UserTracker({
-  secretKey: import.meta.env.VITE_TRACKER_SECRET,
-});
+## Quick start
 
-tracker.init(); // start collecting
-// tracker.destroy(); // call on teardown
-```
-
-## React / Next.js (Pages Router)
+### React / Vite
 
 ```tsx
-// _app.tsx
-import { UserTrackerProvider } from "alpha-tracker/react";
+// main.tsx
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { UserTrackerProvider } from 'alphana-sdk/react';
+import App from './App';
 
-export default function App({ Component, pageProps }) {
-  return (
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
     <UserTrackerProvider
       config={{
-        secretKey: process.env.NEXT_PUBLIC_TRACKER_SECRET,
+        appId: import.meta.env.VITE_TRACKER_APP_ID,
+        secretKey: import.meta.env.VITE_TRACKER_SECRET,
       }}
     >
-      <Component {...pageProps} />
+      <App />
     </UserTrackerProvider>
-  );
-}
+  </StrictMode>,
+);
 ```
 
-## Next.js App Router
+```bash
+# .env.local
+VITE_TRACKER_APP_ID=your_app_id
+VITE_TRACKER_SECRET=your_secret_key
+```
 
-Because the App Router renders server-side by default you must mark the provider as a Client Component:
+### Next.js App Router
+
+Because App Router renders server-side by default, wrap the provider in a Client Component:
 
 ```tsx
 // app/providers.tsx
-"use client";
-import { UserTrackerProvider } from "alpha-tracker/react";
+'use client';
+import { UserTrackerProvider } from 'alphana-sdk/react';
+import type { ReactNode } from 'react';
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children }: { children: ReactNode }) {
   return (
     <UserTrackerProvider
       config={{
-        secretKey: process.env.NEXT_PUBLIC_TRACKER_SECRET,
+        appId: process.env.NEXT_PUBLIC_TRACKER_APP_ID!,
+        secretKey: process.env.NEXT_PUBLIC_TRACKER_SECRET!,
       }}
     >
       {children}
     </UserTrackerProvider>
   );
 }
+```
 
+```tsx
 // app/layout.tsx
-import { Providers } from "./providers";
+import { Providers } from './providers';
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html>
+    <html lang="en">
       <body>
         <Providers>{children}</Providers>
       </body>
@@ -79,164 +91,173 @@ export default function RootLayout({ children }) {
 }
 ```
 
-### Tracking page changes in the App Router
-
-```tsx
-// app/components/NavigationTracker.tsx
-"use client";
-import { usePathname } from "next/navigation";
-import { usePageView } from "alpha-tracker/react";
-
-export function NavigationTracker() {
-  usePageView(usePathname());
-  return null;
-}
+```bash
+# .env.local
+NEXT_PUBLIC_TRACKER_APP_ID=your_app_id
+NEXT_PUBLIC_TRACKER_SECRET=your_secret_key
 ```
 
-Add `<NavigationTracker />` inside your root layout (inside `<Providers>`).
+> **App Router page tracking:** The provider automatically intercepts `pushState` / `popstate`. For App Router you can optionally add an explicit page-view call using the `usePageView` hook in a Client Component:
+>
+> ```tsx
+> // app/components/NavigationTracker.tsx
+> 'use client';
+> import { usePathname } from 'next/navigation';
+> import { usePageView } from 'alphana-sdk/react';
+>
+> export function NavigationTracker() {
+>   usePageView(usePathname());
+>   return null;
+> }
+> ```
+
+### Vanilla JS / TypeScript
+
+```ts
+import { UserTracker } from 'alphana-sdk';
+
+const tracker = new UserTracker({
+  appId: 'YOUR_APP_ID',
+  secretKey: 'YOUR_SECRET_KEY',
+});
+
+tracker.init(); // attach listeners; no-op in SSR environments
+
+// Call on teardown / logout
+tracker.destroy();
+```
+
+---
 
 ## Configuration reference
 
-All options are optional.
+| Option               | Type                            | Default                                 | Description                                                                        |
+| -------------------- | ------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------- |
+| `appId`              | `string`                        | —                                       | **Required.** Your app ID from the Alphana dashboard.                              |
+| `secretKey`          | `string`                        | —                                       | **Required.** SDK secret key — sent as `Authorization: Bearer`.                    |
+| `endpoint`           | `string`                        | `https://api.alphana.ir/api/events`     | Override only when self-hosting.                                                   |
+| `sessionId`          | `string`                        | auto UUID                               | Override the auto-generated session identifier.                                    |
+| `trackNavigation`    | `boolean`                       | `true`                                  | Intercept `pushState` / `popstate` for SPA route changes.                          |
+| `trackTime`          | `boolean`                       | `true`                                  | Measure time spent on each page.                                                   |
+| `trackHeatmap`       | `boolean`                       | `true`                                  | Record mouse-move, click, and scroll positions.                                    |
+| `trackLogs`          | `boolean`                       | `true`                                  | Capture `console.info/warn/error`, `window.onerror`, and `unhandledrejection`.     |
+| `trackSnapshots`     | `boolean`                       | `true`                                  | Send a full-page screenshot every interval (requires `html2canvas`).               |
+| `snapshotIntervalMs` | `number` (ms)                   | `300000` (5 min)                        | How often to capture a snapshot when `trackSnapshots` is enabled.                  |
+| `mouseSampleRate`    | `number` (0–1)                  | `0.3`                                   | Fraction of mouse/scroll events to record.                                         |
+| `maxHeatmapPoints`   | `number`                        | `2000`                                  | Maximum in-memory heatmap points per page.                                         |
+| `batchSize`          | `number`                        | `20`                                    | Events queued before an automatic batch flush.                                     |
+| `flushInterval`      | `number` (ms)                   | `5000`                                  | Milliseconds between automatic flushes regardless of queue size.                   |
+| `onEvent`            | `(event: TrackerEvent) => void` | —                                       | Callback invoked synchronously for every emitted event.                            |
 
-| Option             | Type                            | Default                                   | Description                                                         |
-| ------------------ | ------------------------------- | ----------------------------------------- | ------------------------------------------------------------------- |
-| `endpoint`         | `string`                        | `https://api.alphana.ir/api/events` | Override only when self-hosting                                     |
-| `secretKey`        | `string`                        | —                                         | App secret key from the dashboard — sent as `Authorization: Bearer` |
-| `sessionId`        | `string`                        | auto                                      | Override the auto-generated session UUID                            |
-| `trackNavigation`  | `boolean`                       | `true`                                    | Intercept `pushState` / `popstate` for SPA route changes            |
-| `trackTime`        | `boolean`                       | `true`                                    | Measure time spent on each page                                     |
-| `trackHeatmap`     | `boolean`                       | `true`                                    | Collect mouse-move, click, and scroll positions                     |
-| `trackLogs`        | `boolean`                       | `true`                                    | Capture `console.info/warn/error` and unhandled errors              |
-| `mouseSampleRate`  | `number` (0–1)                  | `0.3`                                     | Fraction of mouse/scroll events to record                           |
-| `maxHeatmapPoints` | `number`                        | `2000`                                    | Maximum in-memory heatmap points per page                           |
-| `batchSize`        | `number`                        | `20`                                      | Events queued before an automatic batch flush                       |
-| `flushInterval`    | `number` (ms)                   | `5000`                                    | Milliseconds between automatic flushes regardless of queue size     |
-| `onEvent`          | `(event: TrackerEvent) => void` | —                                         | Callback invoked synchronously for every emitted event              |
+---
 
 ## API
 
 ### `UserTracker`
 
 ```ts
-const tracker = new UserTracker(config);
+import { UserTracker } from 'alphana-sdk';
 
-tracker.init();                        // attach listeners; no-op in SSR
-tracker.destroy();                     // remove listeners, flush remaining queue
+const tracker = new UserTracker({ appId: 'id', secretKey: 'sk' });
 
-tracker.trackPageView(path?: string);  // manually record a page view
+tracker.init();                         // attach listeners; no-op in SSR; returns `this`
+tracker.destroy();                      // remove all listeners and timers, flush remaining queue
 
-tracker.getSession();                  // read-only snapshot of the current SessionData
-tracker.getPageViews();                // PageView[] recorded this session
-tracker.getTimeSpent();                // Record<path, ms> cumulative time per path
-tracker.getHeatmapData(path);         // HeatmapPoint[] for a specific path
-tracker.getHeatmapData();             // Record<path, HeatmapPoint[]> for all paths
+tracker.trackPageView(path?: string);   // manually record a page view
 
-tracker.subscribe(fn);                 // register an event listener; returns unsub fn
+tracker.getSession();                   // SessionData snapshot for the current session
+tracker.getPageViews();                 // PageView[] recorded this session
+tracker.getTimeSpent();                 // Record<path, ms> cumulative time per path
+tracker.getHeatmapData(path?: string);  // HeatmapPoint[] for path, or all paths if omitted
+
+tracker.flush();                        // immediately POST all queued events
+tracker.subscribe(fn);                  // register an event listener; returns an unsubscribe fn
 ```
+
+**Heartbeat:** The SDK emits a `session:heartbeat` event every 30 seconds to keep the session alive.
+
+**Page-hide flush:** On `visibilitychange` (tab hidden or browser minimised) the SDK calls `navigator.sendBeacon` to ensure no events are dropped.
 
 ### `LogCapture`
 
-Automatically instantiated by `UserTracker` when `trackLogs: true` and an `endpoint` is set. You can also use it standalone to ship logs without the full SDK:
+Automatically used by `UserTracker` when `trackLogs: true`. Can also be used standalone:
 
 ```ts
-import { LogCapture } from "alpha-tracker";
+import { LogCapture } from 'alphana-sdk';
 
 const capture = new LogCapture({
-  endpoint: "https://your-backend.com/api/events",
-  sessionId: "my-session-id",
-  secretKey: "sk_...",
+  endpoint: 'https://your-backend.com/api/events',
+  sessionId: 'ses_abc123',
+  appId: 'YOUR_APP_ID',
+  secretKey: 'sk_...',
 });
 
-capture.init(); // patches console.info/warn/error and window.onerror
-capture.destroy(); // restores original console methods
+capture.init();    // patches console.info/warn/error, window.onerror, unhandledrejection
+capture.destroy(); // restores original methods
 ```
 
 ### `renderHeatmap`
 
-Renders a `HeatmapPoint[]` array onto a `<canvas>` element using a blue→red color palette:
+Renders a `HeatmapPoint[]` array onto a `<canvas>` element using a blue → red color palette.
 
 ```ts
-import { renderHeatmap } from "alpha-tracker";
+import { renderHeatmap } from 'alphana-sdk';
 
-renderHeatmap(canvasElement, points, {
-  radius: 25, // blur radius in pixels (default: 25)
-  maxOpacity: 0.85, // maximum alpha for hot spots (default: 0.85)
-  minOpacity: 0, // minimum alpha for cool areas (default: 0)
-});
-```
-
-## React hooks
-
-All hooks are exported from `alpha-tracker/react`.
-
-| Hook                                | Returns                  | Description                                                       |
-| ----------------------------------- | ------------------------ | ----------------------------------------------------------------- |
-| `useTracker()`                      | `UserTracker \| null`    | Access the tracker instance from context                          |
-| `usePageView(path?)`                | `void`                   | Record a page view when `path` changes (App Router helper)        |
-| `useHeatmapData(path?, refreshMs?)` | `HeatmapPoint[]`         | Live heatmap points for a path, debounced by `refreshMs` (500 ms) |
-| `usePageViews()`                    | `PageView[]`             | All page views recorded in the current session                    |
-| `useTimeSpent()`                    | `Record<string, number>` | Cumulative milliseconds spent per path                            |
-
-## Configuration
-
-| Option             | Type              | Default | Description                            |
-| ------------------ | ----------------- | ------- | -------------------------------------- |
-| `endpoint`         | `string`          | —       | URL to POST events to                  |
-| `secretKey`        | `string`          | —       | App secret from the dashboard          |
-| `sessionId`        | `string`          | auto    | Override session ID                    |
-| `trackNavigation`  | `boolean`         | `true`  | Track SPA route changes                |
-| `trackTime`        | `boolean`         | `true`  | Track time-on-page                     |
-| `trackHeatmap`     | `boolean`         | `true`  | Collect mouse/scroll data              |
-| `mouseSampleRate`  | `number`          | `0.3`   | Fraction of mouse events sampled (0–1) |
-| `maxHeatmapPoints` | `number`          | `2000`  | Max heatmap points stored in memory    |
-| `onEvent`          | `(event) => void` | —       | Callback for every emitted event       |
-
-## React hooks
-
-```tsx
-import {
-  useTracker,
-  usePageView,
-  useHeatmapData,
-  usePageViews,
-  useTimeSpent,
-} from "alpha-tracker/react";
-
-// Access the tracker instance
-const tracker = useTracker();
-
-// Manually record a page view (required for Next.js App Router)
-usePageView(pathname);
-
-// Live heatmap data for the current page
-const points = useHeatmapData("/about");
-
-// All page views in the current session
-const views = usePageViews();
-
-// Cumulative milliseconds per path
-const time = useTimeSpent();
-```
-
-## Rendering a heatmap
-
-```ts
-import { renderHeatmap } from "alpha-tracker";
-
-const canvas = document.getElementById("heatmap") as HTMLCanvasElement;
-canvas.width = 1280;
+const canvas = document.getElementById('heatmap') as HTMLCanvasElement;
+canvas.width  = 1280;
 canvas.height = 720;
 
-renderHeatmap(canvas, tracker.getHeatmapData("/"), {
-  radius: 28,
-  maxOpacity: 0.85,
+renderHeatmap(canvas, points, {
+  radius:     25,    // blur radius in px       (default: 25)
+  maxOpacity: 0.85,  // max alpha for hotspots  (default: 0.85)
+  minOpacity: 0,     // min alpha for cold areas (default: 0)
 });
 ```
 
-## TypeScript types
+### `DEFAULT_ENDPOINT`
 
-All public types are re-exported from the root entry:
+The default API URL is exported if you need it:
+
+```ts
+import { DEFAULT_ENDPOINT } from 'alphana-sdk';
+// "https://api.alphana.ir/api/events"
+```
+
+---
+
+## React hooks
+
+All hooks are exported from `alphana/react`.
+
+| Hook                                 | Returns            | Description                                                        |
+| ------------------------------------ | ------------------ | ------------------------------------------------------------------ |
+| `useTracker()`                       | `UserTracker`      | Access the tracker instance from context.                          |
+| `usePageView(path?)`                 | `void`             | Record a page view when `path` changes (App Router helper).        |
+| `useHeatmapData(path?, refreshMs?)`  | `HeatmapPoint[]`   | Live heatmap points for a path, polled every `refreshMs` (500 ms). |
+| `usePageViews()`                     | `PageView[]`       | All page views recorded in the current session.                    |
+| `useTimeSpent()`                     | `number` (seconds) | Total time spent on the current page (updates every second).       |
+
+```tsx
+import { useTracker, useTimeSpent, useHeatmapData } from 'alphana-sdk/react';
+
+export function DebugPanel() {
+  const tracker   = useTracker();
+  const timeSpent = useTimeSpent();   // seconds on this page
+  const points    = useHeatmapData(); // HeatmapPoint[]
+
+  return (
+    <div>
+      <p>Time on page: {timeSpent}s</p>
+      <p>Heatmap points: {points.length}</p>
+      <button onClick={() => tracker.flush()}>Flush now</button>
+    </div>
+  );
+}
+```
+
+---
+
+## TypeScript types
 
 ```ts
 import type {
@@ -246,14 +267,32 @@ import type {
   TimeSpent,
   HeatmapPoint,
   SessionData,
+  GeoLocation,
+  LogLevel,
+  LogEntry,
   HeatmapRenderOptions,
-} from "alpha-tracker";
+} from 'alphana-sdk';
 ```
 
-## Building from source
+---
+
+## Self-hosting
+
+The full backend, dashboard, and landing page are open source. To run on your own infrastructure:
 
 ```bash
-pnpm --filter alpha-tracker build
+git clone https://github.com/teokamalipour/alphana-sdk.git
+cd alphana-sdk
+cp .env.example .env   # fill in your values
+docker compose up -d   # starts MongoDB, NestJS backend, and React dashboard
 ```
 
-Output goes to `packages/tracker/dist/`.
+Then point the SDK at your server:
+
+```ts
+new UserTracker({
+  appId: 'YOUR_APP_ID',
+  secretKey: 'YOUR_SECRET_KEY',
+  endpoint: 'https://your-server.example.com/api/events',
+});
+```

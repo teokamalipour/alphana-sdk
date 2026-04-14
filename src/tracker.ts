@@ -174,6 +174,7 @@ export class UserTracker {
           endpoint: this.cfg.endpoint,
           appId: this.cfg.appId,
           secretKey: this.cfg.secretKey,
+          intervalMs: this.cfg.snapshotIntervalMs,
         });
         // Capture immediately on init.
         void this.snapshot.capture(window.location.pathname);
