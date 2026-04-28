@@ -21,6 +21,10 @@ interface HeatmapPluginOptions {
  * Mouse moves and scroll events are throttled (50 ms) and further reduced by
  * the configurable `sampleRate`. Clicks are never sampled — each one is always
  * recorded (up to `maxPoints`).
+ *
+ * Scroll events record the scroll bar position (top edge of the visible
+ * viewport), so dots in the heatmap align with the scroll indicator position
+ * on the page snapshot.
  */
 export class HeatmapPlugin {
   private readonly emit: EmitFn;
@@ -116,15 +120,18 @@ export class HeatmapPlugin {
     const pageWidth = document.documentElement.scrollWidth;
     const pageHeight = document.documentElement.scrollHeight;
     const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    // Record the centre of the visible viewport.
-    const centerX = window.scrollX + vw / 2;
-    const centerY = window.scrollY + vh / 2;
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    // Record the scroll position (top edge of the visible viewport).
+    // Using scrollY instead of the viewport centre keeps scroll dots aligned
+    // with the scroll bar position, matching how click/move events are anchored
+    // to their exact page coordinates.
+    const absX = scrollX + vw / 2;
     this.recordPoint({
       x: vw / 2,
-      y: centerY,
-      xPct: pageWidth > 0 ? (centerX / pageWidth) * 100 : 0,
-      yPct: pageHeight > 0 ? (centerY / pageHeight) * 100 : 0,
+      y: scrollY,
+      xPct: pageWidth > 0 ? (absX / pageWidth) * 100 : 50,
+      yPct: pageHeight > 0 ? (scrollY / pageHeight) * 100 : 0,
       type: "scroll",
     });
   };
