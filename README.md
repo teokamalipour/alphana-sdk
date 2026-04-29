@@ -14,11 +14,6 @@ yarn add alphana-sdk
 bun add alphana-sdk
 ```
 
-> **Snapshots optional:** If you want the screenshot feature (`trackSnapshots: true`), also install `html2canvas`:
-> ```bash
-> npm install html2canvas
-> ```
-
 ---
 
 ## Quick start
